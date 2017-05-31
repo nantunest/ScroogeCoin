@@ -11,8 +11,8 @@ public class TxHandler {
 
     /**
      * @return true if:
-     * (1) all outputs claimed by {@code tx} are in the current UTXO pool, 
-     * (2) the signatures on each input of {@code tx} are valid, 
+     * (1) all outputs claimed by {@code tx} are in the current UTXO pool,
+     * (2) the signatures on each input of {@code tx} are valid,
      * (3) no UTXO is claimed multiple times by {@code tx},
      * (4) all of {@code tx}s output values are non-negative, and
      * (5) the sum of {@code tx}s input values is greater than or equal to the sum of its output
@@ -20,6 +20,11 @@ public class TxHandler {
      */
     public boolean isValidTx(Transaction tx) {
         // IMPLEMENT THIS
+
+        // (1) for all o in tx.o if utxo.contains(o)
+
+        // (2) for all i in tx.i if Crypto.verifySignature(i.pk, tx.getRawTx, i.sig)
+
     }
 
     /**
