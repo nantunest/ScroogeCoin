@@ -5,8 +5,11 @@ public class TxHandler {
      * {@code utxoPool}. This should make a copy of utxoPool by using the UTXOPool(UTXOPool uPool)
      * constructor.
      */
+     UTXOPool utxoPool;
+
     public TxHandler(UTXOPool utxoPool) {
         // IMPLEMENT THIS
+        utxoPool = UTXOPool(utxoPool);
     }
 
     /**
@@ -21,9 +24,22 @@ public class TxHandler {
     public boolean isValidTx(Transaction tx) {
         // IMPLEMENT THIS
 
-        // (1) for all o in tx.o if utxo.contains(o)
+        // (1) for o in all tx.i if utxo.contains(o)
+        for (Transaction.Input txIn : tx.getInputs) {
+            UTXO probeUtxo(txIn.prevTxHash, txIn.outputIndex)
 
-        // (2) for all i in tx.i if Crypto.verifySignature(i.pk, tx.getRawTx, i.sig)
+            if (!utxoPool.contains(probeUtxo))
+                return false;
+
+            else {
+              // (2) for all i in tx.i if Crypto.verifySignature(o.pk, tx.getRawTx, i.sig)
+
+              Transaction.Output sigOut = utxoPool.getTxOutput(probeUtxo);
+              if (Crypto.verifySignature(sigOut.address, txIn.getRawTx(), tx.signature));
+            }
+        }
+
+
 
     }
 
