@@ -92,8 +92,13 @@ public class TxHandler {
      */
     public Transaction[] handleTxs(Transaction[] possibleTxs) {
         // IMPLEMENT THIS
+        ArrayList<Transaction> individuallyValidTxs;
 
         // validate each transaction individually
+        for (Transaction tx : possibleTxs){
+          if(isValidTx(tx))
+            individuallyValidTxs.add(tx);
+        }
 
         // create a temporary utxo pool
     }
