@@ -3,13 +3,15 @@ import java.util.Arrays;
 
 public class TxHandler {
 
+
+
+    private UTXOPool utxoPool;
+
     /**
      * Creates a public ledger whose current UTXOPool (collection of unspent transaction outputs) is
      * {@code utxoPool}. This should make a copy of utxoPool by using the UTXOPool(UTXOPool uPool)
      * constructor.
      */
-    private UTXOPool utxoPool;
-
     public TxHandler(UTXOPool utxoPool) {
         // IMPLEMENT THIS
         utxoPool = new UTXOPool(utxoPool);
@@ -53,7 +55,7 @@ public class TxHandler {
             Transaction.Output claimedOutput = utxoPool.getTxOutput(claimedUtxo);
 
             // Verify signature
-            if (!Crypto.verifySignature(claimedOutput.address, tx.getRawDataToSign(tx.getInputs().indexOf(txIn)), tx.signature))
+            if (!Crypto.verifySignature(claimedOutput.address, tx.getRawDataToSign(tx.getInputs().indexOf(txIn)), txIn.signature))
                 return false;
 
             // (3) no UTXO is claimed multiple times by {@code tx}
@@ -94,29 +96,29 @@ public class TxHandler {
      */
     public Transaction[] handleTxs(Transaction [] possibleTxs) {
         // IMPLEMENT THIS
-        ArrayList<Transaction> individuallyValidTxs;
 
-        // validate each transaction individually
-        for (Transaction tx : possibleTxs){
-          if(isValidTx(tx))
-            individuallyValidTxs.add(tx);
+        ArrayList<Transaction> validTx = validateGroup(new ArrayList<>(Arrays.asList(possibleTxs)));
+
+        // update utxoPool
+
+        for(Transaction tx : validTx) {
+
         }
 
-        // create a temporary utxo pool
+        return (Transaction[]) validTx.toArray();
 
     }
 
-    private Transaction[] validateGroup(Transaction[] group) {
+    private ArrayList<Transaction> validateGroup(ArrayList<Transaction> group) {
 
-        ArrayList<Transaction> groupArray = new ArrayList<>(Arrays.asList(group));
         ArrayList<Transaction> acceptedTx = new ArrayList<>();
-        UTXOPool tempUtxoPool = new UTXOPool();
+  //      UTXOPool tempUtxoPool = new UTXOPool();
 
         // validate each transaction individually with the current UtxoPool
         for (Transaction tx : group) {
             if (isValidTx(tx)) {
                 acceptedTx.add(tx);
-                groupArray.remove(tx);
+                group.remove(tx);
             }
         }
 
@@ -125,10 +127,17 @@ public class TxHandler {
             for (Transaction.Input txIn : tx.getInputs()) {
                 UTXO claimedUtxo = new UTXO(txIn.prevTxHash, txIn.outputIndex);
 
-                if (!tempUtxoPool.contains(claimedUtxo))
+                if (utxoPool.contains(claimedUtxo)) {
                     // output was not claimed yet
-                    tempUtxoPool.addUTXO(claimedUtxo, utxoPool.getTxOutput(claimedUtxo));
-                else {
+
+                    // add utxo to temporary utxoPool to verify double spending within other accepted tx
+                    //utxoPool.addUTXO(claimedUtxo, utxoPool.getTxOutput(claimedUtxo));
+
+                    // remove spent utxo from utxoPool
+                    // in this way we accept the first transaction which claims that utxo
+                    utxoPool.removeUTXO(claimedUtxo);
+
+                } else {
                     // in this case it is a double spending
                     // for now lets just drop the transaction from accepted
                     acceptedTx.remove(tx);
@@ -137,8 +146,22 @@ public class TxHandler {
             }
         }
 
-        if (acceptedTx.size() > 0)
-            validateGroup(groupArray.toArray());
+        if (acceptedTx.size() > 0) {
+
+            // update utxoPartially adding new utxo created by accepted transactions
+            for (Transaction tx : acceptedTx) {
+                for (Transaction.Output txOut : tx.getOutputs()) {
+                    UTXO newUtxo = new UTXO(tx.getHash(), tx.getOutputs().indexOf(txOut));
+                    utxoPool.addUTXO(newUtxo, txOut);
+                }
+            }
+
+            acceptedTx.addAll(validateGroup(group));
+            return acceptedTx;
+        }
+        else
+            return acceptedTx;
+
     }
 
 }
