@@ -3,6 +3,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.KeyPairGenerator;
+import java.security.KeyPair;
 
 public class Crypto {
 
@@ -32,5 +34,9 @@ public class Crypto {
         }
         return false;
 
+    }
+
+    public static KeyPair generateKeyPair() throws Exception {
+        return KeyPairGenerator.getInstance("RSA").generateKeyPair();
     }
 }
