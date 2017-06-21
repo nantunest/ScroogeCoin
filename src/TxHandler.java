@@ -1,3 +1,5 @@
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -5,7 +7,7 @@ public class TxHandler {
 
 
 
-    private UTXOPool utxoPool;
+    public UTXOPool utxoPool;
 
     /**
      * Creates a public ledger whose current UTXOPool (collection of unspent transaction outputs) is
@@ -14,7 +16,7 @@ public class TxHandler {
      */
     public TxHandler(UTXOPool utxoPool) {
         // IMPLEMENT THIS
-        utxoPool = new UTXOPool(utxoPool);
+        this.utxoPool = new UTXOPool(utxoPool);
     }
 
     /**
@@ -45,8 +47,10 @@ public class TxHandler {
             UTXO claimedUtxo = new UTXO(txIn.prevTxHash, txIn.outputIndex);
 
             // If not every utxo referenced by an input in the transaction is in the UTXOPool, "isValidTx" fails
-            if (!utxoPool.contains(claimedUtxo))
+            if (!utxoPool.contains(claimedUtxo)){
+                System.out.println("failed on 1");
                 return false;
+            }
 
             // (2) the signatures on each input of {@code tx} are valid,
             // for all i in tx.i if Crypto.verifySignature(o.pk, tx.getRawDataToSig, i.sig)
@@ -55,12 +59,16 @@ public class TxHandler {
             Transaction.Output claimedOutput = utxoPool.getTxOutput(claimedUtxo);
 
             // Verify signature
-            if (!Crypto.verifySignature(claimedOutput.address, tx.getRawDataToSign(tx.getInputs().indexOf(txIn)), txIn.signature))
+            if (!Crypto.verifySignature(claimedOutput.address, tx.getRawDataToSign(tx.getInputs().indexOf(txIn)), txIn.signature)) {
+                System.out.println("falied on 2");
                 return false;
+            }
 
             // (3) no UTXO is claimed multiple times by {@code tx}
-            if(claimedUtxos.contains(claimedUtxo))
-              return false;
+            if(claimedUtxos.contains(claimedUtxo)) {
+                System.out.println("failed on 3");
+                return false;
+            }
 
             // add claimedOutput value to the amount of input values to this transaction
             sumOfInputs += claimedOutput.value;
@@ -75,6 +83,7 @@ public class TxHandler {
         for (Transaction.Output txOut : tx.getOutputs()) {
 
             if (txOut.value < 0) {
+                System.out.println("failed on 4");
                 return false;
             }
             sumOfOutputs += txOut.value;
@@ -82,8 +91,11 @@ public class TxHandler {
 
         // (5) the sum of {@code tx}s input values is greater than or equal to the sum of its output
         // values; and false otherwise.
-        if(!(sumOfInputs >= sumOfOutputs))
-          return false;
+        if(!(sumOfInputs >= sumOfOutputs)) {
+            System.out.println("failed on 5");
+
+            return false;
+        }
 
         return true;
 
@@ -99,13 +111,7 @@ public class TxHandler {
 
         ArrayList<Transaction> validTx = validateGroup(new ArrayList<>(Arrays.asList(possibleTxs)));
 
-        // update utxoPool
-
-        for(Transaction tx : validTx) {
-
-        }
-
-        return (Transaction[]) validTx.toArray();
+        return validTx.toArray(new Transaction [validTx.size()]);
 
     }
 
@@ -118,11 +124,11 @@ public class TxHandler {
         for (Transaction tx : group) {
             if (isValidTx(tx)) {
                 acceptedTx.add(tx);
-                group.remove(tx);
             }
         }
 
         for (Transaction tx : acceptedTx) {
+            group.remove(tx);
             // test if accepted transactions claims the same utxo
             for (Transaction.Input txIn : tx.getInputs()) {
                 UTXO claimedUtxo = new UTXO(txIn.prevTxHash, txIn.outputIndex);

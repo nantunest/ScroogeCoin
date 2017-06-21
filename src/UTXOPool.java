@@ -52,14 +52,4 @@ public class UTXOPool {
         return allUTXO;
     }
 
-    /** @return true if Transaction.Output (@code txOut} is referenced by some UTXO and false otherswise **/
-    public boolean isReferenced(Transaction.Output txOut) {
-
-        for (UTXO utxo: getAllUTXO()) {
-            if(txOut == getTxOutput(utxo))
-                return true;
-        }
-
-        return false;
-    }
 }
