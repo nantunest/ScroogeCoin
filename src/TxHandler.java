@@ -48,7 +48,7 @@ public class TxHandler {
 
             // If not every utxo referenced by an input in the transaction is in the UTXOPool, "isValidTx" fails
             if (!utxoPool.contains(claimedUtxo)){
-                System.out.println("failed on 1");
+                System.out.println("1");
                 return false;
             }
 
@@ -60,13 +60,13 @@ public class TxHandler {
 
             // Verify signature
             if (!Crypto.verifySignature(claimedOutput.address, tx.getRawDataToSign(tx.getInputs().indexOf(txIn)), txIn.signature)) {
-                System.out.println("falied on 2");
+                System.out.println("2");
                 return false;
             }
 
             // (3) no UTXO is claimed multiple times by {@code tx}
             if(claimedUtxos.contains(claimedUtxo)) {
-                System.out.println("failed on 3");
+                System.out.println("3");
                 return false;
             }
 
@@ -83,7 +83,7 @@ public class TxHandler {
         for (Transaction.Output txOut : tx.getOutputs()) {
 
             if (txOut.value < 0) {
-                System.out.println("failed on 4");
+                System.out.println("4");
                 return false;
             }
             sumOfOutputs += txOut.value;
@@ -92,8 +92,8 @@ public class TxHandler {
         // (5) the sum of {@code tx}s input values is greater than or equal to the sum of its output
         // values; and false otherwise.
         if(!(sumOfInputs >= sumOfOutputs)) {
-            System.out.println("failed on 5");
 
+            System.out.println("5");
             return false;
         }
 
@@ -118,6 +118,7 @@ public class TxHandler {
     private ArrayList<Transaction> validateGroup(ArrayList<Transaction> group) {
 
         ArrayList<Transaction> acceptedTx = new ArrayList<>();
+        ArrayList<Transaction> finalAcceptedTx = new ArrayList<>();
   //      UTXOPool tempUtxoPool = new UTXOPool();
 
         // validate each transaction individually with the current UtxoPool
@@ -130,29 +131,27 @@ public class TxHandler {
         for (Transaction tx : acceptedTx) {
             group.remove(tx);
             // test if accepted transactions claims the same utxo
+            boolean acceptTx = true;
             for (Transaction.Input txIn : tx.getInputs()) {
                 UTXO claimedUtxo = new UTXO(txIn.prevTxHash, txIn.outputIndex);
 
                 if (utxoPool.contains(claimedUtxo)) {
                     // output was not claimed yet
 
-                    // add utxo to temporary utxoPool to verify double spending within other accepted tx
-                    //utxoPool.addUTXO(claimedUtxo, utxoPool.getTxOutput(claimedUtxo));
-
                     // remove spent utxo from utxoPool
                     // in this way we accept the first transaction which claims that utxo
                     utxoPool.removeUTXO(claimedUtxo);
-
                 } else {
-                    // in this case it is a double spending
-                    // for now lets just drop the transaction from accepted
-                    acceptedTx.remove(tx);
+                    acceptTx = false;
                     break;
                 }
             }
+
+            if(acceptTx)
+                finalAcceptedTx.add(tx);
         }
 
-        if (acceptedTx.size() > 0) {
+        if (finalAcceptedTx.size() > 0) {
 
             // update utxoPartially adding new utxo created by accepted transactions
             for (Transaction tx : acceptedTx) {
@@ -162,12 +161,10 @@ public class TxHandler {
                 }
             }
 
-            acceptedTx.addAll(validateGroup(group));
-            return acceptedTx;
+            finalAcceptedTx.addAll(validateGroup(group));
         }
-        else
-            return acceptedTx;
 
+        return finalAcceptedTx;
     }
 
 }
