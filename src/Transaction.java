@@ -205,4 +205,23 @@ public class Transaction {
     public int numOutputs() {
         return outputs.size();
     }
+
+    public String toString() {
+        StringBuilder retString = new StringBuilder();
+
+        retString.append( "hash: " + Scrooge.bytesToHex(this.hash));
+
+        for(Input txIn : inputs) {
+            retString.append("prevHash: " + Scrooge.bytesToHex(txIn.prevTxHash)).append(System.lineSeparator())
+                     .append("outputIndex: " + txIn.outputIndex).append(System.lineSeparator())
+                     .append("signature: " + Scrooge.bytesToHex(txIn.signature)).append(System.lineSeparator());
+        }
+
+        for (Output txOut : outputs) {
+            retString.append("address: " + txOut.address).append(System.lineSeparator())
+                     .append("value: " + txOut.value).append(System.lineSeparator());
+        }
+
+        return retString.toString();
+    }
 }

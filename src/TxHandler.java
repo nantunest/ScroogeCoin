@@ -48,7 +48,12 @@ public class TxHandler {
 
             // If not every utxo referenced by an input in the transaction is in the UTXOPool, "isValidTx" fails
             if (!utxoPool.contains(claimedUtxo)){
-                System.out.println("1");
+                System.out.println("Tx " + Scrooge.bytesToHex(tx.getHash()) + " rejected"
+                        +"\n\tINPUT: ["
+                        +"\n\t   prevTxHash: " + Scrooge.bytesToHex(txIn.prevTxHash)
+                        +"\n\t   outputIndex: " + txIn.outputIndex
+                        +"\n\t]"
+                        +" -> not in utxoPool\n");
                 return false;
             }
 
@@ -60,13 +65,24 @@ public class TxHandler {
 
             // Verify signature
             if (!Crypto.verifySignature(claimedOutput.address, tx.getRawDataToSign(tx.getInputs().indexOf(txIn)), txIn.signature)) {
-                System.out.println("2");
+                System.out.println("Tx " + Scrooge.bytesToHex(tx.getHash()) + " rejected"
+                        +"\n\tINPUT: ["
+                        +"\n\t   prevTxHash: " + Scrooge.bytesToHex(txIn.prevTxHash)
+                        +"\n\t   outputIndex: " + txIn.outputIndex
+                        +"\n\t]"
+                        +" -> signature doesnt verify\n");
+
                 return false;
             }
 
             // (3) no UTXO is claimed multiple times by {@code tx}
             if(claimedUtxos.contains(claimedUtxo)) {
-                System.out.println("3");
+                System.out.println("Tx " + Scrooge.bytesToHex(tx.getHash()) + " rejected"
+                        +"\n\tINPUT: ["
+                        +"\n\t   prevTxHash: " + Scrooge.bytesToHex(txIn.prevTxHash)
+                        +"\n\t   outputIndex: " + txIn.outputIndex
+                        +"\n\t]"
+                        +" -> tutxo already in the pool\n");
                 return false;
             }
 
@@ -83,7 +99,11 @@ public class TxHandler {
         for (Transaction.Output txOut : tx.getOutputs()) {
 
             if (txOut.value < 0) {
-                System.out.println("4");
+                System.out.println("# Tx " + Scrooge.bytesToHex(tx.getHash()) + " rejected"
+                        +"\n\tINPUT: ["
+                        +"\n\t   pk: " + txOut.address
+                        +"\n\t   value: " + txOut.value
+                        +"\n\t]" + " -> is negative");
                 return false;
             }
             sumOfOutputs += txOut.value;
@@ -93,7 +113,9 @@ public class TxHandler {
         // values; and false otherwise.
         if(!(sumOfInputs >= sumOfOutputs)) {
 
-            System.out.println("5");
+            System.out.println("# Tx " + Scrooge.bytesToHex(tx.getHash()) + " rejected" + System.lineSeparator()
+                    +"sum of inputs is greater than sum of outputs");
+
             return false;
         }
 
@@ -132,23 +154,27 @@ public class TxHandler {
             group.remove(tx);
             // test if accepted transactions claims the same utxo
             boolean acceptTx = true;
+            UTXOPool tmpUtxoPool = utxoPool;
+
             for (Transaction.Input txIn : tx.getInputs()) {
                 UTXO claimedUtxo = new UTXO(txIn.prevTxHash, txIn.outputIndex);
 
-                if (utxoPool.contains(claimedUtxo)) {
+                if (tmpUtxoPool.contains(claimedUtxo)) {
                     // output was not claimed yet
 
                     // remove spent utxo from utxoPool
                     // in this way we accept the first transaction which claims that utxo
-                    utxoPool.removeUTXO(claimedUtxo);
+                    tmpUtxoPool.removeUTXO(claimedUtxo);
                 } else {
                     acceptTx = false;
                     break;
                 }
             }
 
-            if(acceptTx)
+            if(acceptTx) {
                 finalAcceptedTx.add(tx);
+                utxoPool = tmpUtxoPool;
+            }
         }
 
         if (finalAcceptedTx.size() > 0) {
