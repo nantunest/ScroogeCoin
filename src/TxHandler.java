@@ -194,4 +194,8 @@ public class TxHandler {
         return finalAcceptedTx;
     }
 
+    public ArrayList< ArrayList<Transaction> > getMutuallyValidTransactions(ArrayList<Transaction> group) {
+        // create an array for every set of mutually valid transactions
+    }
+
 }
