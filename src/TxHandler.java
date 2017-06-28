@@ -1,7 +1,9 @@
 import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class TxHandler {
 
@@ -196,6 +198,34 @@ public class TxHandler {
 
     public ArrayList< ArrayList<Transaction> > getMutuallyValidTransactions(ArrayList<Transaction> group) {
         // create an array for every set of mutually valid transactions
+        ArrayList< ArrayList<Transaction>> mutVal = new ArrayList< ArrayList<Transaction>>();
+
+        ArrayList<Transaction> acceptedTx = new ArrayList<>();
+
+        HashMap<UTXO, ArrayList<Transaction> > utxoMap = new HashMap<UTXO, ArrayList<Transaction>>();
+
+        // validate each transaction individually with the current UtxoPool
+        for (Transaction tx : group) {
+            if (isValidTx(tx)) {
+                acceptedTx.add(tx);
+            }
+        }
+
+        // check for double spending
+        for (Transaction tx : acceptedTx) {
+            // if tx is double spending,
+
+            for (Transaction.Input txIn : tx.getInputs()) {
+                UTXO claimedUtxo = new UTXO(txIn.prevTxHash, txIn.outputIndex);
+
+                if(utxoMap.get(claimedUtxo) == null)
+                    utxoMap.put(claimedUtxo, new ArrayList<>());
+
+                utxoMap.get(claimedUtxo).add(tx);
+
+            }
+        }
+
     }
 
 }
