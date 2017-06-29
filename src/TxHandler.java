@@ -218,14 +218,22 @@ public class TxHandler {
             for (Transaction.Input txIn : tx.getInputs()) {
                 UTXO claimedUtxo = new UTXO(txIn.prevTxHash, txIn.outputIndex);
 
-                if(utxoMap.get(claimedUtxo) == null)
-                    utxoMap.put(claimedUtxo, new ArrayList<>());
+                utxoMap.putIfAbsent(claimedUtxo, new ArrayList<>());
 
                 utxoMap.get(claimedUtxo).add(tx);
 
             }
+
         }
 
+        // add the transactions mapped for only one utxo in each list of valid transactions
+        for (ArrayList<Transaction> txAr : utxoMap.values()) {
+            if (txAr.size() == 1) {
+                for (ArrayList<Transaction> arTx : mutVal) {
+                    arTx.add(txAr.get(0));
+                }
+            }
+        }
     }
 
 }
