@@ -4,6 +4,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 public class TxHandler {
 
@@ -226,14 +227,32 @@ public class TxHandler {
 
         }
 
-        // add the transactions mapped for only one utxo in each list of valid transactions
-        for (ArrayList<Transaction> txAr : utxoMap.values()) {
-            if (txAr.size() == 1) {
-                for (ArrayList<Transaction> arTx : mutVal) {
-                    arTx.add(txAr.get(0));
-                }
+        for(ArrayList<Transaction> arTx : mutVal) {
+            for(ArrayList<Transaction> arTxm : makeLists(utxoMap)) {
+                arTx.addAll((arTxm));
             }
         }
+
+    }
+
+    private ArrayList<ArrayList<Transaction>> makeLists(HashMap<UTXO, ArrayList<Transaction>> utxoMap) {
+
+        ArrayList<ArrayList<Transaction>> txResult = new ArrayList<>();
+
+        HashMap.Entry<UTXO, ArrayList<Transaction>> targEntry = (HashMap.Entry<UTXO, ArrayList<Transaction>>)utxoMap.entrySet().toArray()[0];
+        utxoMap.remove(targEntry);
+
+        for(Transaction tx : targEntry.getValue()) {
+            for (ArrayList<Transaction> arTx: makeLists(utxoMap)){
+                ArrayList<Transaction> nArTx = new ArrayList<>();
+                nArTx.add(tx);
+                nArTx.addAll(arTx);
+                txResult.add(nArTx);
+            }
+        }
+
+        return txResult;
+
     }
 
 }
