@@ -233,22 +233,31 @@ public class TxHandler {
             }
         }
 
+        return mutVal;
+
     }
 
     private ArrayList<ArrayList<Transaction>> makeLists(HashMap<UTXO, ArrayList<Transaction>> utxoMap) {
 
         ArrayList<ArrayList<Transaction>> txResult = new ArrayList<>();
 
-        HashMap.Entry<UTXO, ArrayList<Transaction>> targEntry = (HashMap.Entry<UTXO, ArrayList<Transaction>>)utxoMap.entrySet().toArray()[0];
+        if (utxoMap.isEmpty())
+            return txResult;
+
+        HashMap.Entry<UTXO, ArrayList<Transaction>> targEntry = utxoMap.entrySet().iterator().next();
         utxoMap.remove(targEntry);
 
         for(Transaction tx : targEntry.getValue()) {
-            for (ArrayList<Transaction> arTx: makeLists(utxoMap)){
-                ArrayList<Transaction> nArTx = new ArrayList<>();
-                nArTx.add(tx);
+            ArrayList<Transaction> nArTx = new ArrayList<>();
+            nArTx.add(tx);
+
+            for (ArrayList<Transaction> arTx : makeLists(utxoMap)) {
                 nArTx.addAll(arTx);
                 txResult.add(nArTx);
             }
+
+            txResult.add(nArTx);
+
         }
 
         return txResult;
